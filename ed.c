@@ -1,27 +1,8 @@
-/* this is V6 ed, _lightly_ modified by Geo Carncross <geocar@sdf.lonestar.org> to:
-
-     1. compile with a K&R compiler (not even ansified); replacing =+ with += and using "=" for default assignment
-     2. assume 32-bits or better (ldiv and ldivr, increasing the sbrk to 4096)
-     3. use setjmp+longjmp instead of sysexit+reset
-     4. use lseek() instead of seek() (although still assumes 512 bytes)
-     5. copies the tempfilename to work on systems without writable strings
-     6. use SIG_IGN instead of the numeric value "1"
-     7. remove the goto errlab since that doesn't work in ANSI C
-     8. commented out getpid() in favor of a local copy
-     9. renamed unix() to run_unix() because some systems (at least some linux) annoyingly do a -Dunix=1
-
-I've tried to keep these modifications as minimal as possible in an effort to preserve the editor that I learned unix on.
-
-To compile with GCC on most platforms you can get away with:
-
-	gcc -Os -s -ansi -w -o ed ed.c 
-
-*/
-
 #include <stdlib.h>
 #include <signal.h>
 #include <setjmp.h>
 #include <string.h>
+#include <fcntl.h>
 
 /*
  * Editor
@@ -290,7 +271,7 @@ commands()
 		newline();
 		count[1] = (addr2-zero)&077777;
 		putd();
-		putchar('\n');
+		putc('\n');
 		continue;
 
 	case '!':
@@ -486,26 +467,26 @@ exfile()
 	io = -1;
 	if (vflag) {
 		putd();
-		putchar('\n');
+		putc('\n');
 	}
 }
 
 onintr()
 {
 	signal(SIGINT, onintr);
-	putchar('\n');
+	putc('\n');
 	lastc = '\n';
 	error;
 }
 
-errfunc()
+void errfunc(void)
 {
 	register c;
 
 	listf = 0;
 	puts("?");
 	count[0] = 0;
-	lseek(0, 0, 2);
+	lseek(0, 0, SEEK_END);
 	pflag = 0;
 	if (globp)
 		lastc = '\n';
@@ -761,7 +742,7 @@ getblock(atl, iof)
 blkio(b, buf, iofcn)
 int (*iofcn)();
 {
-	lseek(tfile, b * 512, 0);
+	lseek(tfile, b * 512, SEEK_SET);
 	if ((*iofcn)(tfile, buf, 512) != 512) {
 		puts(TMPERR);
 		error;
@@ -1276,7 +1257,7 @@ putd()
 	r = x % 10;
 	if (count[1])
 		putd();
-	putchar(r + '0');
+	putc(r + '0');
 }
 
 puts(as)
@@ -1286,14 +1267,14 @@ puts(as)
 	sp = as;
 	col = 0;
 	while (*sp)
-		putchar(*sp++);
-	putchar('\n');
+		putc(*sp++);
+	putc('\n');
 }
 
 char	line[70];
 char	*linp = line;
 
-putchar(ac)
+putc(ac)
 {
 	register char *lp;
 	register c;
