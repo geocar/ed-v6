@@ -18,10 +18,10 @@ the editor that I learned unix on.
 
 To compile with GCC on most platforms you can get away with:
 
-    gcc -Os -s -ansi -w -o ed ed.c 
+    gcc -m32 -Os -s -ansi -w -o ed ed.c 
 
 CLANG will begrudgingly compile with:
 
-    clang -Wno-return-type -w -Os -o ed ed.c
+    clang -m32 -Wno-return-type -w -Os -o ed ed.c
 
 `ed.c.orig` is included so you can verify how minimal my changes were.
